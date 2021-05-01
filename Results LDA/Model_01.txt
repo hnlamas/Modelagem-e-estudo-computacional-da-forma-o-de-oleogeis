@@ -1,0 +1,71 @@
+> # Discriminant analysis
+> require(MASS)
+> require(dplyr)
+> require(ggplot2)
+> # Data
+> dados<-read.csv("G:/Meu Drive/Projeto/Resultados/Model_1.csv",header=TRUE)
+> dados$Outcome<-as.factor(dados$Outcome)
+> #dados[,-c(ncol(dados))] <- scale(dados[,-c(ncol(dados))])
+> str(dados)
+'data.frame':   268 obs. of  7 variables:
+ $ dPg    : num  7.9 1.7 0.985 13.2 8 8.7 7.3 2.59 6.9 11.3 ...
+ $ dHg    : num  12.4 6.1 1.95 13.4 14.1 10.4 12.5 2.42 4.1 9.6 ...
+ $ dDg    : num  16.5 16.8 16.5 18.9 15.9 16.7 16.6 18 16.1 17.8 ...
+ $ dPs    : num  3.32 3.54 3.72 4.1 3.87 4.23 3.45 3.87 1.5 4.1 ...
+ $ dHs    : num  4.61 3.67 3.44 2.5 3.06 2.3 3.69 3.06 4.7 2.5 ...
+ $ dDs    : num  16.4 16.2 16.1 16 16.1 16.1 16.2 16.1 16 16 ...
+ $ Outcome: Factor w/ 3 levels "G","I","S": 1 3 1 1 3 1 1 2 1 1 ...
+> 
+> # Data partition
+> set.seed(555)
+> proportion <- 0.995
+> k <- nrow(dados)
+> outs <- NULL
+> 
+> for (j in 1:k)
++ {
++ index <- sample(1:nrow(dados), round(proportion*nrow(dados)))
++ train <- dados[index, ]
++ test <- dados[-index, ]
++ 
++ 
++ lda.train <- lda(formula=Outcome~.,data=train,na.action="na.omit")
++ lda.train.p <- predict(lda.train,train)
++ 
++ # Confusion matrix and accuracy - testing data
++ p2 <- predict(lda.train, test)$class
++ tab1 <- table(Predicted = p2, Actual = test$Outcome)
++ outs[j] <- sum(diag(tab1))/sum(tab1)
++ }
+> mean(outs)
+[1] 0.8320896
+> lda.train <- lda(formula=Outcome~.,data=dados,na.action="na.omit")
+> lda.train
+Call:
+lda(Outcome ~ ., data = dados, na.action = "na.omit")
+
+Prior probabilities of groups:
+         G          I          S 
+0.86194030 0.03731343 0.10074627 
+
+Group means:
+       dPg       dHg      dDg      dPs      dHs      dDs
+G 6.438797  9.310866 16.86450 3.883939 3.395628 16.08658
+I 8.725000 12.291000 17.21000 4.338000 4.842000 16.17000
+S 5.501481  9.639259 16.74074 3.840000 4.115556 16.19259
+
+Coefficients of linear discriminants:
+            LD1         LD2
+dPg -0.19840354 -0.10948194
+dHg  0.17540961  0.03077682
+dDg  0.52558204 -0.59762879
+dPs -0.02117605 -0.28100537
+dHs  0.66243801 -0.56979727
+dDs  0.63100099  6.86706550
+
+Proportion of trace:
+   LD1    LD2 
+0.6735 0.3265 
+> lda.data <- cbind(dados, predict(lda.train)$x)
+> ggplot(lda.data, aes(LD1, LD2)) +
++   geom_point(aes(color = Outcome))

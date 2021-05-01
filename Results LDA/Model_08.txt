@@ -1,0 +1,68 @@
+> # Discriminant analysis
+> require(MASS)
+> require(dplyr)
+> require(ggplot2)
+> # Data
+> dados<-read.csv("G:/Meu Drive/Projeto/Resultados/Model_8.csv",header=TRUE)
+> dados$Outcome<-as.factor(dados$Outcome)
+> #dados[,-c(ncol(dados))] <- scale(dados[,-c(ncol(dados))])
+> str(dados)
+'data.frame':   268 obs. of  5 variables:
+ $ Dist   : num  9.04 3.11 3.14 14.5 11.8 9.27 9.62 2.37 5.43 10.3 ...
+ $ p      : num  6.68 1.27 2.79 31.6 6.47 7.14 5.57 0.622 10.7 19.8 ...
+ $ h      : num  19.3 2.24 0.833 45.4 46.3 23.5 29.1 0.158 0.132 19.3 ...
+ $ d      : num  0.00147 0.136 0.04 3.21 0.0165 0.123 0.0493 1.35 0.00366 1.24 ...
+ $ Outcome: Factor w/ 3 levels "G","I","S": 1 3 1 1 3 1 1 2 1 1 ...
+> 
+> # Data partition
+> set.seed(555)
+> proportion <- 0.995
+> k <- nrow(dados)
+> outs <- NULL
+> 
+> for (j in 1:k)
++ {
++ index <- sample(1:nrow(dados), round(proportion*nrow(dados)))
++ train <- dados[index, ]
++ test <- dados[-index, ]
++ 
++ 
++ lda.train <- lda(formula=Outcome~.,data=train,na.action="na.omit")
++ lda.train.p <- predict(lda.train,train)
++ 
++ # Confusion matrix and accuracy - testing data
++ p2 <- predict(lda.train, test)$class
++ tab1 <- table(Predicted = p2, Actual = test$Outcome)
++ outs[j] <- sum(diag(tab1))/sum(tab1)
++ }
+> mean(outs)
+[1] 0.8395522
+> lda.train <- lda(formula=Outcome~.,data=dados,na.action="na.omit")
+> lda.train
+Call:
+lda(Outcome ~ ., data = dados, na.action = "na.omit")
+
+Prior probabilities of groups:
+         G          I          S 
+0.86194030 0.03731343 0.10074627 
+
+Group means:
+      Dist         p        h         d
+G 7.741039  8.271541 20.63252 0.3942040
+I 9.648000 10.354780 32.79780 0.6518600
+S 6.548519  6.265593 19.50481 0.1389737
+
+Coefficients of linear discriminants:
+             LD1         LD2
+Dist  0.61699122 -0.33147951
+p    -0.07597048  0.02130691
+h    -0.07585237  0.07956873
+d     0.68764237  0.61106675
+
+Proportion of trace:
+   LD1    LD2 
+0.8042 0.1958 
+> lda.data <- cbind(dados, predict(lda.train)$x)
+> ggplot(lda.data, aes(LD1, LD2)) +
++   geom_point(aes(color = Outcome))
+> 

@@ -1,0 +1,1135 @@
+> # Discriminant analysis
+> require(neuralnet)
+Carregando pacotes exigidos: neuralnet
+> require(nnet)
+Carregando pacotes exigidos: nnet
+> require(ggplot2)
+Carregando pacotes exigidos: ggplot2
+> require(MASS)
+Carregando pacotes exigidos: MASS
+> require(dplyr)
+Carregando pacotes exigidos: dplyr
+
+Attaching package: ‘dplyr’
+
+The following object is masked from ‘package:MASS’:
+
+    select
+
+The following object is masked from ‘package:neuralnet’:
+
+    compute
+
+The following objects are masked from ‘package:stats’:
+
+    filter, lag
+
+The following objects are masked from ‘package:base’:
+
+    intersect, setdiff, setequal, union
+
+> require(pls)
+Carregando pacotes exigidos: pls
+
+Attaching package: ‘pls’
+
+The following object is masked from ‘package:stats’:
+
+    loadings
+
+Warning message:
+package ‘pls’ was built under R version 4.0.3 
+> require("factoextra")
+Carregando pacotes exigidos: factoextra
+Welcome! Want to learn more? See two factoextra-related books at https://goo.gl/ve3WBa
+Warning message:
+package ‘factoextra’ was built under R version 4.0.3 
+> 
+> # Data
+> dados<-read.csv("G:/Meu Drive/Projeto/Resultados/Model_4.csv",header=TRUE)
+> dados$Outcome<-as.factor(dados$Outcome)
+> #dados[,-c(ncol(dados))] <- scale(dados[,-c(ncol(dados))])
+> str(dados)
+'data.frame':   103 obs. of  23 variables:
+ $ dPs    : num  4.35 6.99 4.35 3.87 3.87 3.87 1.5 1.5 1.5 5.22 ...
+ $ dHs    : num  3.26 7.63 3.26 3.06 3.06 3.06 4.7 4.7 4.7 1.62 ...
+ $ dDs    : num  16 16.4 16 16.1 16.1 16.1 16 16 16 15.8 ...
+ $ MVs    : num  951 962 951 941 941 941 906 906 906 853 ...
+ $ dPg    : num  11.8 11.8 11.5 10.5 7.3 6.1 6.5 7.1 7.8 8.7 ...
+ $ dHg    : num  20.3 20.3 18.5 16.6 13.7 12.4 14.1 8.6 8.2 21.8 ...
+ $ dDg    : num  16.5 16.5 16.6 16.9 16.9 16.7 16 17.1 17.1 17.9 ...
+ $ MWg    : num  444 444 416 146 174 202 476 460 499 450 ...
+ $ MPg    : num  478 478 452 402 412 422 511 441 549 524 ...
+ $ BPG    : num  964 964 871 582 612 639 937 886 963 892 ...
+ $ FPg    : num  600 600 594 434 455 475 585 557 588 589 ...
+ $ STg    : num  29.3 29.3 60.3 56.4 52.8 50 25.3 23.9 24.6 54.2 ...
+ $ MVg    : num  227 227 211 122 155 188 239 238 248 205 ...
+ $ Afg    : num  0.699 0.699 1.4 0.964 1.03 1.1 0.514 0.498 0.48 1.18 ...
+ $ Dg     : num  0.976 0.976 0.987 1.18 1.11 1.07 0.995 0.966 1 1.1 ...
+ $ CTg    : num  1260 1260 1100 795 819 841 1180 1110 1220 1120 ...
+ $ CPg    : num  11.1 11.1 11.8 35.7 28.5 23.4 10.8 10.5 10.4 12.4 ...
+ $ CVg    : num  1600 1600 1500 407 520 633 1650 1640 1760 1490 ...
+ $ HFg    : num  74.1 74.1 72.3 25.7 31 36.3 84.3 76.6 82.5 64.7 ...
+ $ G0g    : num  -333 -333 -344 -680 -664 -648 -229 -70.1 120 -330 ...
+ $ Hfg    : num  -1110 -1110 -1060 -861 -903 -944 -933 -756 -609 -1110 ...
+ $ Hvg    : num  240 240 233 62.6 72.4 82.1 227 195 218 243 ...
+ $ Outcome: Factor w/ 3 levels "G","I","S": 1 3 2 1 1 1 1 1 1 1 ...
+> 
+> # Data partition
+> set.seed(555)
+> proportion <- 0.995
+> u <- ncol(dados) - 1
+> y <- ncol(dados)
+> t <- ncol(dados) + 2
+> 
+> pca <- prcomp(dados[c(1:u)], center = TRUE, scale = TRUE)
+> summary(pca)
+Importance of components:
+                          PC1    PC2    PC3     PC4     PC5     PC6     PC7
+Standard deviation     3.0746 2.0691 1.5407 1.37984 1.03621 0.92636 0.85876
+Proportion of Variance 0.4297 0.1946 0.1079 0.08654 0.04881 0.03901 0.03352
+Cumulative Proportion  0.4297 0.6243 0.7322 0.81873 0.86754 0.90654 0.94007
+                           PC8     PC9    PC10    PC11    PC12    PC13    PC14
+Standard deviation     0.63295 0.48690 0.41598 0.41052 0.32739 0.28359 0.24540
+Proportion of Variance 0.01821 0.01078 0.00787 0.00766 0.00487 0.00366 0.00274
+Cumulative Proportion  0.95828 0.96905 0.97692 0.98458 0.98945 0.99311 0.99584
+                          PC15    PC16    PC17    PC18    PC19    PC20    PC21
+Standard deviation     0.21586 0.15099 0.10212 0.06952 0.05874 0.04091 0.03877
+Proportion of Variance 0.00212 0.00104 0.00047 0.00022 0.00016 0.00008 0.00007
+Cumulative Proportion  0.99796 0.99900 0.99947 0.99969 0.99985 0.99992 0.99999
+                          PC22
+Standard deviation     0.01341
+Proportion of Variance 0.00001
+Cumulative Proportion  1.00000
+> pr_var = ( pca$sdev )^2 
+> prop_varex = pr_var / sum( pr_var )
+> 
+> 
+> for (i in 1:u){
++ if (prop_varex[i] >= 0.01){
++ pcomp <- i
++ }
++ }
+> 
+> # Creating a new dataset
+> dadosN = data.frame(pca$x)
+> dadosN = data.frame(dadosN[,1:pcomp], Outcome = dados$Outcome)
+> u <- ncol(dadosN) - 1
+> y <- ncol(dadosN)
+> t <- ncol(dadosN) + 2
+> # Encode as a one hot vector multilabel data
+> dadosNN<- cbind(dadosN[,1:u], class.ind(as.factor(dadosN$Outcome)))
+> # Set labels name
+> names(dadosNN) <- c(names(dadosN)[1:u],"G","I","S")
+> # Scale data
+> scl <- function(x){ (x - min(x))/(max(x) - min(x)) }
+> dadosNN[,1:u] <- data.frame(lapply(dadosNN[,1:u], scl))
+> str(dadosNN)
+'data.frame':   103 obs. of  12 variables:
+ $ PC1: num  0.619 0.567 0.65 0.995 0.949 ...
+ $ PC2: num  0.75 0.955 0.685 0.982 0.809 ...
+ $ PC3: num  0.366 0.44 0.695 1 0.887 ...
+ $ PC4: num  0.474 0.898 0.427 0.24 0.322 ...
+ $ PC5: num  0.286 0.267 0.242 1 0.946 ...
+ $ PC6: num  0.291 0.798 0.251 0.748 0.752 ...
+ $ PC7: num  0.822 0.73 0.31 0.704 0.645 ...
+ $ PC8: num  0.931 0.626 0.876 0.462 0.526 ...
+ $ PC9: num  0.708 0.798 0.718 0.221 0.367 ...
+ $ G  : num  1 0 0 1 1 1 1 1 1 1 ...
+ $ I  : num  0 0 1 0 0 0 0 0 0 0 ...
+ $ S  : num  0 1 0 0 0 0 0 0 0 0 ...
+> 
+> # Train test split proportions
+> proportion <- 0.995
+> k <- nrow(dadosNN)
+> outs <- NULL
+> ins <- NULL
+> for (i in 1:u)
++ {
++ for (j in 1:k)
++ {
++ index <- sample(1:nrow(dadosNN), round(proportion*nrow(dadosNN)))
++ train <- dadosNN[index, ]
++ test <- dadosNN[-index, ]
++ # Set up formula
++ n <- names(dadosNN)
++ f <- as.formula(paste("G + I + S ~", paste(n[!n %in% c("G","I","S")], collapse = " + ")))
++ 
++ nn <- neuralnet(f,
++                 data = train,
++                 hidden = i,
++                 stepmax = 1e+10, threshold=0.05,
++                 act.fct = "logistic",
++                 linear.output = FALSE,
++                 lifesign = "minimal", rep = 1)
++ 
++ 
++ # Compute predictions
++ 
++ pr.nn <- predict(nn, test[, 1:u])
++ 
++ # Extract results
++ #pr.nn_ <- pr.nn
++ 
++ # Accuracy (Test set)
++ original_values <- max.col(test[, y:t])
++ pr.nn_2 <- max.col(pr.nn)
++ outs[c(i,j)] <- mean(pr.nn_2 == original_values)
++ }
++ ins[i] <- mean(outs[c(i,1:k)])
++ }
+hidden: 1    thresh: 0.05    rep: 1/1    steps:      12 error: 10.06149 time: 0 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:      16 error: 9.22772  time: 0.02 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:      29 error: 10.05038 time: 0 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:      16 error: 10.05257 time: 0.02 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:      23 error: 10.0661  time: 0 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:      21 error: 10.05733 time: 0.02 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:      30 error: 10.04917 time: 0 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:      92 error: 7.18323  time: 0.02 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:     414 error: 4.73353  time: 0.06 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:    4406 error: 3.33224  time: 0.45 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:     187 error: 4.91345  time: 0.02 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:      21 error: 10.06203 time: 0.02 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:      29 error: 10.04926 time: 0 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:      24 error: 10.09777 time: 0.02 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:      20 error: 10.05251 time: 0 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:      14 error: 10.05062 time: 0.02 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:   32406 error: 2.82039  time: 4.08 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:     426 error: 4.71708  time: 0.03 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:     156 error: 4.72019  time: 0.02 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:      25 error: 10.04924 time: 0 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:      21 error: 10.05097 time: 0 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:    6837 error: 3.36242  time: 0.84 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:      20 error: 10.04661 time: 0.02 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:     212 error: 4.94213  time: 0.03 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:    5637 error: 3.1153   time: 0.7 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:   26039 error: 2.81909  time: 2.79 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:      23 error: 10.05089 time: 0 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:      10 error: 10.06135 time: 0 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:      24 error: 10.04927 time: 0 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:    3141 error: 3.12983  time: 0.39 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:      19 error: 10.05019 time: 0 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:      17 error: 10.05352 time: 0 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:      26 error: 10.04914 time: 0 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:      19 error: 10.05447 time: 0 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:      19 error: 10.05092 time: 0.02 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:    2253 error: 3.37652  time: 0.25 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:      21 error: 10.05245 time: 0.02 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:     902 error: 4.28108  time: 0.09 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:      25 error: 10.04736 time: 0 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:    8591 error: 3.41459  time: 0.97 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:      21 error: 9.99928  time: 0 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:      39 error: 10.04037 time: 0 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:    2571 error: 3.74708  time: 0.37 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:      15 error: 10.04969 time: 0 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:      12 error: 10.05409 time: 0.02 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:      19 error: 10.05236 time: 0.02 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:      98 error: 5.14679  time: 0.03 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:    3441 error: 3.17496  time: 0.38 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:    5231 error: 2.10527  time: 0.64 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:      17 error: 9.1772   time: 0 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:    1157 error: 3.78751  time: 0.11 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:      13 error: 10.04129 time: 0.01 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:      23 error: 10.0536  time: 0 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:      13 error: 10.06686 time: 0 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:     743 error: 4.24493  time: 0.11 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:   30936 error: 2.84462  time: 3.44 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:    1300 error: 4.10674  time: 0.15 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:      26 error: 9.22558  time: 0 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:      92 error: 6.19486  time: 0.01 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:    7501 error: 3.06372  time: 0.79 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:      17 error: 10.02339 time: 0 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:     668 error: 4.20104  time: 0.07 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:    5275 error: 2.55769  time: 0.6 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:    2442 error: 3.1922   time: 0.27 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:    1697 error: 2.93731  time: 0.21 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:      14 error: 10.01724 time: 0 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:    5256 error: 3.35294  time: 0.58 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:      24 error: 10.05064 time: 0 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:      21 error: 10.05521 time: 0 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:      30 error: 10.05165 time: 0 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:     588 error: 4.14086  time: 0.06 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:    4635 error: 3.34079  time: 0.5 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:      18 error: 10.05137 time: 0 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:      34 error: 10.03195 time: 0 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:      26 error: 10.05429 time: 0 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:    3072 error: 3.20592  time: 0.32 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:      23 error: 9.18242  time: 0 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:     470 error: 4.36165  time: 0.05 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:      23 error: 10.05052 time: 0 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:      22 error: 9.99026  time: 0 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:      21 error: 10.05162 time: 0 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:    9600 error: 2.95602  time: 1.3 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:     141 error: 4.90104  time: 0.02 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:    3986 error: 3.3282   time: 0.43 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:     458 error: 4.80207  time: 0.05 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:      20 error: 9.19346  time: 0 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:      15 error: 10.05144 time: 0 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:      32 error: 10.06694 time: 0 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:      23 error: 10.04986 time: 0 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:      18 error: 10.05099 time: 0 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:      19 error: 10.04745 time: 0 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:      22 error: 10.0504  time: 0 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:     992 error: 4.10698  time: 0.1 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:      18 error: 10.0529  time: 0 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:      10 error: 10.04776 time: 0 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:      13 error: 10.02613 time: 0 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:      22 error: 10.05653 time: 0 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:    6141 error: 3.37503  time: 0.66 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:     167 error: 4.87321  time: 0.02 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:      26 error: 10.04932 time: 0 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:     299 error: 4.66701  time: 0.04 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:      20 error: 10.05194 time: 0 secs
+hidden: 1    thresh: 0.05    rep: 1/1    steps:      29 error: 10.04763 time: 0 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:     147 error: 4.5052   time: 0.02 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:      20 error: 10.05869 time: 0 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:   27766 error: 2.85136  time: 3.49 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:      22 error: 9.22638  time: 0 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:      24 error: 10.0431  time: 0 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:    3073 error: 0.79349  time: 0.4 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:      22 error: 10.0542  time: 0.01 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:    6568 error: 0.59885  time: 0.81 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:     212 error: 3.71913  time: 0.02 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:    2533 error: 1.58088  time: 0.31 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:    6590 error: 0.59776  time: 0.92 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:      22 error: 9.18866  time: 0 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:     458 error: 3.13536  time: 0.09 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:    3681 error: 2.08662  time: 0.51 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:      13 error: 10.04791 time: 0 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:      16 error: 10.04366 time: 0 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:      10 error: 10.05054 time: 0 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:     385 error: 3.46218  time: 0.06 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:     529 error: 2.80872  time: 0.08 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:     499 error: 3.4006   time: 0.07 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:      15 error: 10.0479  time: 0 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:      17 error: 9.22708  time: 0 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:      22 error: 10.04879 time: 0 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:     700 error: 3.28428  time: 0.11 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:      17 error: 10.04991 time: 0.01 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:       8 error: 10.06198 time: 0.01 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:    1436 error: 1.65564  time: 0.19 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:     178 error: 3.83228  time: 0.03 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:    3616 error: 2.0971   time: 0.51 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:    3340 error: 1.01859  time: 0.45 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:      17 error: 9.22335  time: 0 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:     189 error: 3.45705  time: 0.03 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:      14 error: 10.05144 time: 0.01 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:      24 error: 10.05253 time: 0.01 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:    4494 error: 2.06487  time: 0.54 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:   12814 error: 0.58435  time: 1.56 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:    2219 error: 2.12727  time: 0.26 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:    7427 error: 0.72119  time: 0.89 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:      12 error: 10.03837 time: 0 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:      20 error: 9.99806  time: 0 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:      11 error: 10.03885 time: 0 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:      14 error: 10.03621 time: 0 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:     502 error: 1.7009   time: 0.06 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:      10 error: 10.05299 time: 0.01 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:    6447 error: 0.62928  time: 0.76 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:     583 error: 3.01294  time: 0.07 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:     580 error: 3.15484  time: 0.07 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:    6171 error: 1.14414  time: 0.78 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:     969 error: 3.09211  time: 0.11 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:     189 error: 3.81991  time: 0.03 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:     664 error: 2.69151  time: 0.07 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:      18 error: 9.22533  time: 0 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:    3313 error: 1.31464  time: 0.4 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:     161 error: 4.05105  time: 0.02 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:    3844 error: 1.95056  time: 0.48 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:    2513 error: 1.26582  time: 0.3 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:      17 error: 10.05135 time: 0 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:     263 error: 3.88427  time: 0.03 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:      25 error: 10.05278 time: 0 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:     679 error: 2.54544  time: 0.08 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:     227 error: 3.89242  time: 0.02 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:      23 error: 9.18959  time: 0 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:   29029 error: 0.6413   time: 3.46 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:      75 error: 4.84899  time: 0.01 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:    1591 error: 2.17283  time: 0.19 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:      17 error: 10.05162 time: 0 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:    1263 error: 2.84292  time: 0.16 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:      16 error: 10.05041 time: 0 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:      14 error: 9.22493  time: 0 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:     665 error: 2.64538  time: 0.09 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:    3536 error: 2.09086  time: 0.44 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:     736 error: 2.96258  time: 0.08 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:    2886 error: 0.9105   time: 0.35 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:    2568 error: 2.77261  time: 0.33 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:      19 error: 10.00343 time: 0 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:     178 error: 2.91049  time: 0.03 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:    1332 error: 3.21675  time: 0.16 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:    9424 error: 1.25249  time: 1.14 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:      15 error: 10.01943 time: 0 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:    2891 error: 0.75934  time: 0.34 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:     710 error: 4.1357   time: 0.09 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:      17 error: 10.04857 time: 0 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:     960 error: 3.12655  time: 0.11 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:      22 error: 10.03787 time: 0 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:     180 error: 3.84626  time: 0.02 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:      18 error: 10.0371  time: 0 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:     404 error: 3.38085  time: 0.05 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:      10 error: 10.05298 time: 0 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:      24 error: 10.05097 time: 0 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:     247 error: 3.61267  time: 0.02 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:      21 error: 9.21855  time: 0 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:   16290 error: 0.61524  time: 2.08 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:      19 error: 10.07152 time: 0 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:     402 error: 2.84326  time: 0.04 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:     459 error: 3.27374  time: 0.05 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:      11 error: 9.23074  time: 0 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:    1331 error: 2.6159   time: 0.17 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:     188 error: 3.86088  time: 0.02 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:    4117 error: 0.91435  time: 0.51 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:     750 error: 3.25425  time: 0.08 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:    2462 error: 1.06412  time: 0.35 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:    2266 error: 1.689    time: 0.28 secs
+hidden: 2    thresh: 0.05    rep: 1/1    steps:      13 error: 10.01657 time: 0 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:     244 error: 3.10152  time: 0.03 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:    1040 error: 1.59672  time: 0.15 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:    2152 error: 1.12571  time: 0.31 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:     139 error: 4.15515  time: 0.02 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:     828 error: 1.56353  time: 0.14 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:     312 error: 3.36462  time: 0.04 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:     779 error: 2.80173  time: 0.11 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:    2552 error: 0.85524  time: 0.44 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:     135 error: 4.17488  time: 0.02 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:     181 error: 4.12838  time: 0.03 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:     711 error: 1.49576  time: 0.1 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:     613 error: 2.35465  time: 0.08 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:     308 error: 2.8472   time: 0.05 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:    1728 error: 1.62153  time: 0.35 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:      20 error: 10.05215 time: 0 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:     953 error: 2.36713  time: 0.2 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:     479 error: 2.2245   time: 0.08 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:     403 error: 2.25658  time: 0.07 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:     241 error: 3.66947  time: 0.06 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:    1416 error: 1.16273  time: 0.24 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:      15 error: 10.06393 time: 0 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:    1784 error: 1.24423  time: 0.3 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:    2307 error: 1.0461   time: 0.33 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:      21 error: 10.02981 time: 0 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:      18 error: 9.21741  time: 0 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:     938 error: 1.67527  time: 0.13 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:      15 error: 10.01679 time: 0.01 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:     504 error: 2.47548  time: 0.07 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:      15 error: 10.03532 time: 0.02 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:     197 error: 3.46496  time: 0.02 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:     734 error: 1.9399   time: 0.09 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:    3597 error: 0.7342   time: 0.53 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:    2219 error: 1.01501  time: 0.29 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:      13 error: 10.03667 time: 0 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:    1129 error: 1.327    time: 0.15 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:    1003 error: 2.36583  time: 0.13 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:    2349 error: 2.19228  time: 0.3 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:     213 error: 3.83931  time: 0.03 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:      11 error: 9.24052  time: 0 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:    2312 error: 0.9132   time: 0.31 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:    1416 error: 1.23941  time: 0.19 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:    1793 error: 0.75453  time: 0.29 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:      23 error: 10.01833 time: 0 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:    1382 error: 0.13162  time: 0.22 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:      14 error: 10.00964 time: 0 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:    1173 error: 1.7615   time: 0.15 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:       9 error: 9.99121  time: 0 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:     153 error: 3.79055  time: 0.04 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:     288 error: 3.30005  time: 0.04 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:    2870 error: 2.10938  time: 0.39 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:      12 error: 10.05532 time: 0 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:      15 error: 10.00675 time: 0 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:     663 error: 1.55524  time: 0.1 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:    3383 error: 0.65481  time: 0.5 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:    1288 error: 0.91762  time: 0.19 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:     708 error: 2.06261  time: 0.1 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:    3599 error: 1.30137  time: 0.5 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:     140 error: 3.74842  time: 0.01 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:     671 error: 2.57223  time: 0.08 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:    3547 error: 0.72148  time: 0.48 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:     310 error: 3.66401  time: 0.07 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:     617 error: 2.34694  time: 0.09 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:     484 error: 3.55186  time: 0.08 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:       9 error: 10.05568 time: 0 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:      15 error: 10.03883 time: 0 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:    1494 error: 1.26271  time: 0.22 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:      15 error: 9.18443  time: 0 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:    1689 error: 0.75482  time: 0.26 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:    1592 error: 0.91219  time: 0.21 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:    3750 error: 0.74348  time: 0.52 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:    1639 error: 0.81756  time: 0.23 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:    3586 error: 0.81476  time: 0.47 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:     779 error: 3.44446  time: 0.12 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:     854 error: 1.85589  time: 0.11 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:    2983 error: 0.7739   time: 0.39 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:     508 error: 2.04071  time: 0.08 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:     564 error: 1.93805  time: 0.07 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:      18 error: 10.04758 time: 0 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:    3914 error: 0.6151   time: 0.53 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:     127 error: 4.23733  time: 0.02 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:     211 error: 3.43793  time: 0.02 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:    1095 error: 1.78424  time: 0.14 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:      11 error: 10.04849 time: 0 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:     691 error: 2.6299   time: 0.09 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:      10 error: 10.03505 time: 0 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:    5079 error: 0.60638  time: 0.66 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:     141 error: 4.34658  time: 0.02 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:      12 error: 10.02575 time: 0 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:     661 error: 4.15476  time: 0.1 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:       9 error: 10.02124 time: 0 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:    1736 error: 0.75812  time: 0.23 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:     471 error: 2.84213  time: 0.06 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:     779 error: 2.44809  time: 0.1 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:     904 error: 1.6524   time: 0.11 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:    3531 error: 0.1598   time: 0.47 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:     433 error: 3.18315  time: 0.06 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:     512 error: 2.77936  time: 0.06 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:    2896 error: 0.13759  time: 0.39 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:    2589 error: 0.74209  time: 0.34 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:    3227 error: 0.77512  time: 0.43 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:     899 error: 1.56656  time: 0.12 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:     124 error: 4.20019  time: 0.03 secs
+hidden: 3    thresh: 0.05    rep: 1/1    steps:       7 error: 10.11497 time: 0.01 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:    1696 error: 0.76862  time: 0.27 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:     133 error: 3.89109  time: 0.02 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:     329 error: 2.26293  time: 0.05 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:    1185 error: 0.81728  time: 0.17 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:    1854 error: 0.20309  time: 0.27 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:     119 error: 4.15925  time: 0.02 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:     384 error: 2.42204  time: 0.05 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:     673 error: 1.2533   time: 0.1 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:      13 error: 10.02099 time: 0.01 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:     838 error: 1.51551  time: 0.12 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:    1913 error: 0.17501  time: 0.27 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:      19 error: 10.04968 time: 0.01 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:    1025 error: 1.06684  time: 0.15 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:    1255 error: 1.06783  time: 0.18 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:    1279 error: 0.26868  time: 0.18 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:     944 error: 0.97526  time: 0.14 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:     308 error: 3.0414   time: 0.05 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:    1942 error: 0.15525  time: 0.28 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:    1106 error: 0.75215  time: 0.16 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:    1988 error: 0.97997  time: 0.28 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:     141 error: 3.27799  time: 0.02 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:     115 error: 4.20083  time: 0.02 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:     199 error: 3.73916  time: 0.04 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:    1980 error: 0.18609  time: 0.28 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:    1477 error: 1.16216  time: 0.22 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:    1234 error: 0.83141  time: 0.17 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:    4542 error: 0.78234  time: 0.69 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:    1957 error: 0.78401  time: 0.28 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:    1230 error: 0.69522  time: 0.17 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:    2579 error: 2.10285  time: 0.37 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:    2116 error: 0.70625  time: 0.3 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:     860 error: 1.32274  time: 0.12 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:     278 error: 3.01724  time: 0.04 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:    1699 error: 0.65768  time: 0.24 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:      94 error: 3.61345  time: 0.01 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:     105 error: 4.33014  time: 0.01 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:    1102 error: 0.30231  time: 0.16 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:    2103 error: 0.13731  time: 0.29 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:      15 error: 10.04158 time: 0 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:     131 error: 3.98745  time: 0.01 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:     373 error: 2.60277  time: 0.05 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:    1268 error: 0.69575  time: 0.19 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:     115 error: 4.20789  time: 0.02 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:    1125 error: 0.71306  time: 0.16 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:     494 error: 2.17063  time: 0.07 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:     697 error: 1.72765  time: 0.1 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:    2399 error: 0.21624  time: 0.34 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:      13 error: 9.18943  time: 0 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:    1761 error: 0.75636  time: 0.27 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:    1976 error: 0.22237  time: 0.29 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:    2057 error: 0.90077  time: 0.3 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:     471 error: 1.38606  time: 0.07 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:      12 error: 9.23092  time: 0 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:    1840 error: 0.56903  time: 0.27 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:    1023 error: 0.95705  time: 0.15 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:    2196 error: 0.64814  time: 0.31 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:     574 error: 1.44021  time: 0.09 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:     317 error: 2.92214  time: 0.05 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:     839 error: 1.69164  time: 0.12 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:    1378 error: 0.51773  time: 0.19 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:     480 error: 2.50347  time: 0.07 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:     870 error: 2.61343  time: 0.12 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:    1798 error: 1.00939  time: 0.26 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:     108 error: 4.34367  time: 0.02 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:     423 error: 1.3366   time: 0.08 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:    1804 error: 0.25931  time: 0.26 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:     841 error: 1.41935  time: 0.12 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:     288 error: 1.91361  time: 0.04 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:    1616 error: 0.7085   time: 0.24 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:     827 error: 1.04286  time: 0.12 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:     689 error: 1.39768  time: 0.1 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:     919 error: 1.22713  time: 0.14 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:     151 error: 3.9492   time: 0.02 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:      16 error: 10.03878 time: 0.01 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:    2227 error: 0.18701  time: 0.32 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:    3888 error: 0.66335  time: 0.55 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:      83 error: 4.26599  time: 0.01 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:    2798 error: 1.33276  time: 0.41 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:      59 error: 4.70266  time: 0.01 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:      16 error: 10.03967 time: 0.01 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:     573 error: 1.4725   time: 0.09 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:     867 error: 1.35958  time: 0.13 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:       9 error: 10.03518 time: 0 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:     630 error: 2.70739  time: 0.08 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:    2023 error: 0.93231  time: 0.29 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:     357 error: 1.5588   time: 0.05 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:    1025 error: 0.98075  time: 0.15 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:     865 error: 0.92861  time: 0.12 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:     920 error: 2.45687  time: 0.13 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:      92 error: 4.3132   time: 0.02 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:     760 error: 1.36386  time: 0.11 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:     792 error: 2.17236  time: 0.11 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:    1873 error: 0.83158  time: 0.27 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:    1340 error: 1.08945  time: 0.19 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:    1286 error: 0.79762  time: 0.19 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:     121 error: 4.08661  time: 0.02 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:     209 error: 3.48235  time: 0.03 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:     758 error: 1.94335  time: 0.11 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:     130 error: 4.10126  time: 0.02 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:     482 error: 1.63776  time: 0.07 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:    1768 error: 0.67399  time: 0.25 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:     167 error: 3.37133  time: 0.02 secs
+hidden: 4    thresh: 0.05    rep: 1/1    steps:     347 error: 1.62583  time: 0.06 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:    1791 error: 0.66133  time: 0.28 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:     925 error: 0.81989  time: 0.15 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:    1054 error: 0.27719  time: 0.16 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:     137 error: 3.68256  time: 0.02 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:     623 error: 1.59602  time: 0.1 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:     149 error: 2.68904  time: 0.02 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:     117 error: 4.26319  time: 0.02 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:     950 error: 2.09304  time: 0.16 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:    1592 error: 0.18427  time: 0.25 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:     194 error: 3.35956  time: 0.03 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:     122 error: 4.00281  time: 0.02 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:    1441 error: 0.84398  time: 0.24 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:     233 error: 3.44755  time: 0.03 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:    1461 error: 0.24653  time: 0.24 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:    1308 error: 0.93577  time: 0.21 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:      98 error: 4.33173  time: 0.03 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:    1041 error: 1.96306  time: 0.17 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:      16 error: 10.00278 time: 0 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:    1644 error: 0.95324  time: 0.26 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:     241 error: 2.71157  time: 0.04 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:    1034 error: 0.4662   time: 0.16 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:    1220 error: 0.88633  time: 0.19 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:    2445 error: 0.14373  time: 0.39 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:     372 error: 1.76208  time: 0.06 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:    1568 error: 0.40475  time: 0.24 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:     610 error: 1.67073  time: 0.1 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:     212 error: 3.59061  time: 0.04 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:     740 error: 1.37424  time: 0.12 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:     202 error: 2.57898  time: 0.03 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:    1323 error: 0.32676  time: 0.22 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:      81 error: 4.54466  time: 0.01 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:    1454 error: 0.31039  time: 0.23 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:     441 error: 1.33264  time: 0.06 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:     330 error: 2.01599  time: 0.05 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:     212 error: 3.23872  time: 0.04 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:     296 error: 2.99808  time: 0.05 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:      14 error: 10.03456 time: 0 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:     103 error: 3.42357  time: 0.02 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:    1276 error: 0.66516  time: 0.21 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:     352 error: 1.93248  time: 0.05 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:     694 error: 0.70172  time: 0.15 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:     318 error: 3.03873  time: 0.05 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:      80 error: 4.46181  time: 0.01 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:     221 error: 3.63771  time: 0.04 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:     456 error: 1.13813  time: 0.07 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:     340 error: 1.64204  time: 0.05 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:     475 error: 1.73593  time: 0.08 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:     351 error: 2.25225  time: 0.05 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:     293 error: 3.08357  time: 0.05 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:     850 error: 1.12583  time: 0.13 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:     354 error: 1.67781  time: 0.05 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:     258 error: 2.36502  time: 0.03 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:    1529 error: 0.23831  time: 0.25 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:     434 error: 0.97462  time: 0.07 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:     158 error: 3.8721   time: 0.03 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:     382 error: 1.95338  time: 0.06 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:     492 error: 1.36981  time: 0.08 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:     302 error: 1.93286  time: 0.05 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:     152 error: 3.25465  time: 0.02 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:    1101 error: 0.37638  time: 0.17 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:     411 error: 2.27563  time: 0.07 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:    1433 error: 0.32106  time: 0.21 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:     790 error: 1.27561  time: 0.13 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:    1206 error: 0.97909  time: 0.19 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:    1892 error: 0.23325  time: 0.29 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:     611 error: 1.75268  time: 0.09 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:     685 error: 1.09231  time: 0.11 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:     482 error: 1.39041  time: 0.08 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:    2227 error: 0.26614  time: 0.34 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:      12 error: 10.03108 time: 0 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:    2265 error: 0.70578  time: 0.37 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:     183 error: 2.81005  time: 0.03 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:     136 error: 2.68552  time: 0.02 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:    1314 error: 0.76876  time: 0.22 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:     235 error: 2.8799   time: 0.04 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:      75 error: 4.38203  time: 0.01 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:     918 error: 0.53646  time: 0.18 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:     637 error: 1.2318   time: 0.13 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:      91 error: 3.91948  time: 0.01 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:    1250 error: 1.10084  time: 0.2 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:     136 error: 3.55224  time: 0.02 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:    1040 error: 0.94424  time: 0.17 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:     812 error: 0.89909  time: 0.13 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:    1214 error: 0.26925  time: 0.19 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:    1307 error: 0.32795  time: 0.2 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:     694 error: 2.49679  time: 0.11 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:    1030 error: 0.93509  time: 0.16 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:    1514 error: 0.65737  time: 0.24 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:     284 error: 2.99652  time: 0.04 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:     371 error: 1.7252   time: 0.07 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:    1227 error: 0.27134  time: 0.19 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:     339 error: 1.87425  time: 0.06 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:      81 error: 4.38362  time: 0.01 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:    1369 error: 0.28423  time: 0.21 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:    1386 error: 0.69604  time: 0.22 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:    1276 error: 0.29195  time: 0.19 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:     205 error: 3.04644  time: 0.03 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:    1260 error: 0.74697  time: 0.2 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:     917 error: 0.66451  time: 0.14 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:    1328 error: 0.80826  time: 0.24 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:     902 error: 0.26783  time: 0.14 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:    1306 error: 0.36174  time: 0.21 secs
+hidden: 5    thresh: 0.05    rep: 1/1    steps:     267 error: 2.73324  time: 0.04 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     555 error: 1.23685  time: 0.09 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     190 error: 3.1916   time: 0.03 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     306 error: 2.00526  time: 0.05 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     346 error: 1.6182   time: 0.06 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:      62 error: 4.40863  time: 0.01 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     139 error: 3.60476  time: 0.02 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     461 error: 1.63906  time: 0.08 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     717 error: 0.38042  time: 0.12 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     462 error: 1.27151  time: 0.07 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     159 error: 3.02557  time: 0.03 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     713 error: 0.74615  time: 0.12 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:      14 error: 9.23361  time: 0 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     927 error: 0.89067  time: 0.16 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     274 error: 2.509    time: 0.05 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     295 error: 2.9053   time: 0.05 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     325 error: 1.38483  time: 0.06 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     343 error: 1.84444  time: 0.06 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:    1581 error: 0.21556  time: 0.26 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     814 error: 0.88007  time: 0.13 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     108 error: 3.77416  time: 0.01 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:    1377 error: 0.18009  time: 0.23 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:    1586 error: 0.70525  time: 0.26 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:    1897 error: 0.67257  time: 0.32 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     327 error: 1.49241  time: 0.05 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     268 error: 2.92149  time: 0.04 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     175 error: 2.73847  time: 0.04 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     816 error: 1.61208  time: 0.13 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     831 error: 1.44885  time: 0.14 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     295 error: 2.6919   time: 0.05 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     162 error: 3.45317  time: 0.02 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     248 error: 2.58136  time: 0.04 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     279 error: 2.71094  time: 0.05 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:    1249 error: 0.90413  time: 0.21 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     226 error: 3.02588  time: 0.04 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     994 error: 0.8318   time: 0.16 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     686 error: 0.97596  time: 0.11 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     760 error: 0.58017  time: 0.13 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     866 error: 1.46185  time: 0.14 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     719 error: 1.44956  time: 0.12 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     642 error: 0.6544   time: 0.11 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     164 error: 3.62049  time: 0.03 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     294 error: 1.69331  time: 0.05 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:    1264 error: 0.4546   time: 0.22 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     398 error: 1.59802  time: 0.06 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     169 error: 3.83647  time: 0.04 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     307 error: 1.89414  time: 0.05 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     128 error: 3.56791  time: 0.02 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     635 error: 1.23216  time: 0.1 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     352 error: 1.89869  time: 0.07 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:    1044 error: 0.99412  time: 0.17 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     353 error: 1.90499  time: 0.05 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     110 error: 3.28153  time: 0.03 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     781 error: 0.76849  time: 0.14 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:    1369 error: 0.20534  time: 0.22 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     319 error: 1.64153  time: 0.06 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:    1234 error: 0.76157  time: 0.2 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     294 error: 2.7126   time: 0.05 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     717 error: 1.32949  time: 0.12 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     238 error: 3.03409  time: 0.04 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:    1394 error: 0.3663   time: 0.23 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     639 error: 1.26841  time: 0.1 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     258 error: 1.1851   time: 0.05 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     340 error: 1.5195   time: 0.05 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     437 error: 1.55717  time: 0.08 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:    1294 error: 0.78799  time: 0.22 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     618 error: 2.51991  time: 0.11 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     452 error: 1.5834   time: 0.08 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     586 error: 2.08628  time: 0.1 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     100 error: 2.92997  time: 0.01 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     565 error: 0.80307  time: 0.1 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     100 error: 4.23156  time: 0.03 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:    2104 error: 0.18126  time: 0.35 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     324 error: 2.36974  time: 0.06 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:    1032 error: 0.33943  time: 0.17 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:      14 error: 10.017   time: 0 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:    1243 error: 0.59075  time: 0.21 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     803 error: 1.27265  time: 0.14 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:    1440 error: 0.81619  time: 0.24 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:    1189 error: 1.34112  time: 0.2 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:      59 error: 4.53144  time: 0.01 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:      93 error: 4.21122  time: 0.02 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     683 error: 1.21002  time: 0.12 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     797 error: 0.92822  time: 0.13 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     458 error: 1.64196  time: 0.08 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     105 error: 4.44853  time: 0.02 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:    1111 error: 0.2065   time: 0.19 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     186 error: 2.76278  time: 0.04 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     318 error: 1.38619  time: 0.05 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:    1419 error: 0.95297  time: 0.24 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:    1350 error: 0.83552  time: 0.23 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     368 error: 1.38172  time: 0.06 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:    1443 error: 0.16579  time: 0.24 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     289 error: 1.80021  time: 0.04 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     248 error: 2.03741  time: 0.05 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     533 error: 1.13133  time: 0.08 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:      14 error: 10.04583 time: 0 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:    1834 error: 0.35088  time: 0.37 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     209 error: 2.97044  time: 0.03 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     881 error: 0.86002  time: 0.14 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     231 error: 2.64477  time: 0.04 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:    1891 error: 0.33072  time: 0.33 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:     684 error: 1.1341   time: 0.12 secs
+hidden: 6    thresh: 0.05    rep: 1/1    steps:    1472 error: 0.19747  time: 0.25 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     731 error: 0.51549  time: 0.13 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:      15 error: 9.9898   time: 0 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     406 error: 1.44654  time: 0.07 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     294 error: 2.00186  time: 0.06 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:      60 error: 4.4133   time: 0.01 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     136 error: 3.57605  time: 0.02 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     397 error: 1.25307  time: 0.07 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     272 error: 2.49531  time: 0.04 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     281 error: 1.86102  time: 0.05 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     154 error: 3.1958   time: 0.04 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     204 error: 2.62035  time: 0.03 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     879 error: 0.53908  time: 0.15 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     115 error: 4.06126  time: 0.02 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:    1002 error: 1.03171  time: 0.18 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     851 error: 0.41006  time: 0.15 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     244 error: 1.83918  time: 0.04 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     426 error: 1.26465  time: 0.08 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     256 error: 2.52791  time: 0.05 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     404 error: 1.37023  time: 0.08 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     402 error: 1.50679  time: 0.07 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     450 error: 1.37534  time: 0.08 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     265 error: 2.56306  time: 0.06 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     171 error: 3.08498  time: 0.03 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:    1473 error: 0.23374  time: 0.27 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     150 error: 3.07228  time: 0.03 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     280 error: 1.78835  time: 0.05 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     780 error: 0.9094   time: 0.14 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:      62 error: 4.00427  time: 0.01 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     899 error: 0.39707  time: 0.16 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     134 error: 3.70299  time: 0.03 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     519 error: 1.32665  time: 0.1 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     202 error: 2.91694  time: 0.04 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     202 error: 2.34142  time: 0.08 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     201 error: 2.97133  time: 0.04 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     412 error: 1.69178  time: 0.07 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     679 error: 1.16037  time: 0.13 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     260 error: 1.97421  time: 0.05 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     404 error: 1.3372   time: 0.07 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     421 error: 0.98173  time: 0.08 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:      65 error: 4.52771  time: 0.01 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:      82 error: 4.21082  time: 0.02 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     311 error: 2.13018  time: 0.07 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:      69 error: 4.53654  time: 0.01 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     616 error: 0.96729  time: 0.15 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     239 error: 1.29279  time: 0.05 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     370 error: 1.57115  time: 0.07 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     168 error: 3.12806  time: 0.03 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:    1729 error: 0.31913  time: 0.31 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     179 error: 3.66709  time: 0.03 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:    1330 error: 0.84225  time: 0.23 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     148 error: 3.64124  time: 0.03 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     513 error: 1.11884  time: 0.08 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:      71 error: 4.46329  time: 0.02 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:      72 error: 4.22432  time: 0.01 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     233 error: 3.05268  time: 0.04 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:      58 error: 4.45638  time: 0.01 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:    1077 error: 0.32169  time: 0.2 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     444 error: 1.41804  time: 0.08 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     710 error: 1.02088  time: 0.13 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     203 error: 2.25256  time: 0.05 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     473 error: 1.47695  time: 0.08 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     453 error: 1.44071  time: 0.09 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:    1256 error: 0.37019  time: 0.22 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     366 error: 2.18978  time: 0.06 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     239 error: 2.73786  time: 0.04 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     146 error: 3.46807  time: 0.03 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     106 error: 3.01784  time: 0.02 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     869 error: 0.76154  time: 0.16 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     120 error: 3.86137  time: 0.03 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:      73 error: 4.37159  time: 0.02 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     414 error: 1.99365  time: 0.07 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     277 error: 2.92455  time: 0.06 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     805 error: 0.52867  time: 0.14 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     166 error: 2.79285  time: 0.03 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     768 error: 0.93828  time: 0.14 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:    1392 error: 0.70011  time: 0.24 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:    1471 error: 0.22291  time: 0.26 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     489 error: 0.92891  time: 0.09 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     217 error: 2.94917  time: 0.04 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     615 error: 1.56194  time: 0.11 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     127 error: 4.10945  time: 0.03 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     689 error: 0.39594  time: 0.12 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     730 error: 0.55576  time: 0.13 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     809 error: 0.80078  time: 0.14 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     191 error: 2.08885  time: 0.04 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:    1072 error: 0.31765  time: 0.19 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     162 error: 3.43457  time: 0.03 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     589 error: 0.59274  time: 0.1 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     850 error: 0.45836  time: 0.16 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     130 error: 2.53267  time: 0.03 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:      89 error: 4.18108  time: 0.01 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     154 error: 3.00279  time: 0.03 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     256 error: 2.19137  time: 0.04 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     249 error: 2.11245  time: 0.06 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     279 error: 1.80061  time: 0.05 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     245 error: 2.9153   time: 0.05 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     218 error: 1.75608  time: 0.03 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     734 error: 0.68039  time: 0.14 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     253 error: 2.2389   time: 0.05 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     375 error: 1.6352   time: 0.07 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     448 error: 1.61876  time: 0.08 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:    1209 error: 0.93516  time: 0.21 secs
+hidden: 7    thresh: 0.05    rep: 1/1    steps:     209 error: 3.03793  time: 0.05 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     228 error: 2.13868  time: 0.04 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     144 error: 3.54719  time: 0.03 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     551 error: 0.29421  time: 0.1 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:    1261 error: 0.78917  time: 0.25 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     846 error: 0.99085  time: 0.15 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     146 error: 3.27711  time: 0.03 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     476 error: 1.50835  time: 0.09 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     182 error: 2.74082  time: 0.04 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:      79 error: 4.30252  time: 0.01 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     353 error: 2.36251  time: 0.07 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     215 error: 2.85274  time: 0.05 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:      68 error: 3.5417   time: 0.01 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     236 error: 2.05437  time: 0.04 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:    1491 error: 0.69539  time: 0.29 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     182 error: 3.17973  time: 0.04 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:    1675 error: 0.15065  time: 0.31 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:    1758 error: 0.23201  time: 0.33 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:    1407 error: 0.18337  time: 0.27 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:    1310 error: 0.25467  time: 0.25 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     205 error: 2.1199   time: 0.08 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     617 error: 0.79335  time: 0.12 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     555 error: 1.15468  time: 0.11 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     305 error: 1.5391   time: 0.05 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     244 error: 2.78273  time: 0.04 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     626 error: 0.59265  time: 0.11 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     214 error: 1.95428  time: 0.05 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:      77 error: 4.22086  time: 0.01 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:    1044 error: 0.22247  time: 0.2 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     128 error: 3.67308  time: 0.02 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:      49 error: 4.64963  time: 0.01 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:      81 error: 4.33265  time: 0.01 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:      98 error: 2.9863   time: 0.02 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     212 error: 1.98769  time: 0.05 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     255 error: 2.97737  time: 0.04 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     176 error: 2.85499  time: 0.04 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:      56 error: 4.63453  time: 0.01 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     162 error: 2.52933  time: 0.04 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     791 error: 0.99164  time: 0.16 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     505 error: 1.69625  time: 0.1 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     551 error: 0.77879  time: 0.1 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     235 error: 2.37773  time: 0.04 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     213 error: 2.41838  time: 0.04 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:      65 error: 4.24825  time: 0.01 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     691 error: 1.37742  time: 0.13 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     344 error: 2.39694  time: 0.07 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     319 error: 1.86444  time: 0.07 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:      91 error: 4.1636   time: 0.02 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     583 error: 1.39112  time: 0.11 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     964 error: 0.24771  time: 0.18 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     737 error: 0.6304   time: 0.13 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     229 error: 3.05116  time: 0.05 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     701 error: 0.30821  time: 0.14 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     181 error: 2.36611  time: 0.03 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     362 error: 1.25263  time: 0.07 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     241 error: 2.0876   time: 0.05 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     606 error: 0.42018  time: 0.12 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     137 error: 3.30886  time: 0.02 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     283 error: 1.65628  time: 0.05 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:    1060 error: 0.20018  time: 0.21 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:      86 error: 4.09226  time: 0.02 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     121 error: 3.65848  time: 0.02 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     211 error: 2.90512  time: 0.04 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     394 error: 2.09826  time: 0.08 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:    1185 error: 0.74852  time: 0.22 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     235 error: 2.49476  time: 0.04 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     154 error: 2.49411  time: 0.03 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     194 error: 2.05217  time: 0.05 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     905 error: 0.59741  time: 0.16 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     290 error: 1.88706  time: 0.06 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     757 error: 0.37832  time: 0.14 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     739 error: 0.85731  time: 0.19 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     126 error: 3.75836  time: 0.03 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:      59 error: 4.54009  time: 0.02 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     346 error: 1.54549  time: 0.09 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     814 error: 2.33825  time: 0.17 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     364 error: 1.60627  time: 0.07 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     478 error: 1.30688  time: 0.09 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     468 error: 1.62707  time: 0.09 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     303 error: 1.81288  time: 0.07 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     299 error: 1.9331   time: 0.05 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     174 error: 1.95619  time: 0.03 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     421 error: 1.45467  time: 0.08 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     279 error: 2.35685  time: 0.06 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:      64 error: 4.46164  time: 0.01 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     140 error: 2.64252  time: 0.03 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     354 error: 1.63872  time: 0.06 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     293 error: 1.72329  time: 0.06 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     771 error: 0.4345   time: 0.15 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     310 error: 2.40796  time: 0.06 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     355 error: 1.42169  time: 0.07 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     182 error: 2.87779  time: 0.04 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     364 error: 1.30337  time: 0.06 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     397 error: 1.40953  time: 0.08 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     783 error: 0.41252  time: 0.15 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     356 error: 1.75543  time: 0.07 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     445 error: 1.2424   time: 0.08 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     123 error: 3.46446  time: 0.03 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     353 error: 1.74945  time: 0.07 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     467 error: 1.12238  time: 0.09 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     227 error: 1.98138  time: 0.05 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     468 error: 1.59465  time: 0.09 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     131 error: 3.54103  time: 0.02 secs
+hidden: 8    thresh: 0.05    rep: 1/1    steps:     393 error: 1.51578  time: 0.08 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     122 error: 3.28065  time: 0.03 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     383 error: 1.39098  time: 0.08 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     314 error: 1.71621  time: 0.06 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     489 error: 1.20344  time: 0.1 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     374 error: 1.61379  time: 0.08 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     125 error: 3.27027  time: 0.02 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     266 error: 2.02476  time: 0.05 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     105 error: 3.92122  time: 0.03 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     551 error: 0.68548  time: 0.11 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     207 error: 2.2482   time: 0.04 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     295 error: 1.59828  time: 0.05 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     186 error: 2.60391  time: 0.04 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     373 error: 1.48188  time: 0.08 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     258 error: 2.20447  time: 0.05 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:      99 error: 3.81428  time: 0.02 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:      64 error: 4.36727  time: 0.01 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     368 error: 1.86793  time: 0.07 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     383 error: 1.29748  time: 0.08 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     230 error: 2.05469  time: 0.04 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     191 error: 1.78869  time: 0.04 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     110 error: 3.51477  time: 0.03 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:      54 error: 3.85178  time: 0.01 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     486 error: 0.71413  time: 0.1 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     630 error: 0.40527  time: 0.13 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:      85 error: 3.84361  time: 0.02 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     482 error: 2.29373  time: 0.1 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:      46 error: 4.74268  time: 0.01 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:      77 error: 3.39088  time: 0.01 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     413 error: 1.01997  time: 0.08 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     443 error: 1.08768  time: 0.08 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:    1049 error: 0.47588  time: 0.21 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:      75 error: 4.03503  time: 0.02 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     722 error: 0.82424  time: 0.15 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:      84 error: 3.08634  time: 0.02 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     569 error: 0.69815  time: 0.11 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     147 error: 3.14345  time: 0.03 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     390 error: 2.13974  time: 0.08 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     210 error: 2.58281  time: 0.04 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     282 error: 1.90081  time: 0.06 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     815 error: 0.57198  time: 0.17 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     420 error: 2.0575   time: 0.09 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     984 error: 0.41781  time: 0.19 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:      66 error: 4.04941  time: 0.02 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:      88 error: 3.52494  time: 0.02 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     524 error: 0.42609  time: 0.11 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     156 error: 1.69445  time: 0.03 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     124 error: 3.58599  time: 0.02 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     114 error: 3.45811  time: 0.02 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:      68 error: 4.1082   time: 0.01 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     113 error: 3.60627  time: 0.03 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:      85 error: 4.02863  time: 0.02 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     622 error: 0.36567  time: 0.13 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     242 error: 2.31047  time: 0.04 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     981 error: 0.28704  time: 0.21 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     147 error: 3.1841   time: 0.03 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     877 error: 0.94697  time: 0.18 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     145 error: 2.3554   time: 0.03 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     405 error: 1.20499  time: 0.08 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     518 error: 0.645    time: 0.11 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     288 error: 1.79236  time: 0.05 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     475 error: 1.37323  time: 0.1 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     611 error: 1.01377  time: 0.12 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:      59 error: 4.31505  time: 0.01 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     192 error: 2.62572  time: 0.07 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:    1090 error: 0.25687  time: 0.22 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     378 error: 1.52649  time: 0.07 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     104 error: 3.29104  time: 0.02 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:      77 error: 4.41221  time: 0.02 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     403 error: 1.48578  time: 0.08 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     298 error: 2.11117  time: 0.06 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     647 error: 0.86548  time: 0.13 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     945 error: 0.84686  time: 0.18 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     590 error: 1.02637  time: 0.13 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     153 error: 2.8785   time: 0.03 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:      70 error: 4.4551   time: 0.01 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     285 error: 1.83449  time: 0.06 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     285 error: 1.74336  time: 0.06 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     152 error: 3.46898  time: 0.03 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     232 error: 2.14477  time: 0.05 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:      92 error: 4.0204   time: 0.02 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     932 error: 0.33883  time: 0.18 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     187 error: 3.0643   time: 0.04 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:      86 error: 4.0826   time: 0.02 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     260 error: 1.55822  time: 0.05 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:    1379 error: 0.12756  time: 0.28 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:      62 error: 4.47853  time: 0.02 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     269 error: 1.81034  time: 0.06 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     221 error: 2.11337  time: 0.05 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     301 error: 1.87521  time: 0.06 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:      80 error: 4.238    time: 0.02 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:      92 error: 4.07276  time: 0.03 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     102 error: 3.78311  time: 0.02 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:      68 error: 4.31629  time: 0.01 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     969 error: 0.4067   time: 0.19 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:      91 error: 4.21134  time: 0.02 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     154 error: 3.36439  time: 0.03 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     173 error: 3.13785  time: 0.03 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     271 error: 1.52729  time: 0.06 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     223 error: 2.80189  time: 0.04 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     172 error: 3.00886  time: 0.03 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     598 error: 0.93513  time: 0.13 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:      94 error: 3.9604   time: 0.03 secs
+hidden: 9    thresh: 0.05    rep: 1/1    steps:     140 error: 3.49888  time: 0.02 secs
+> 
+> ins
+[1] 0.8750000 0.8173077 0.8750000 0.8750000 0.7788462 0.8461538 0.8461538
+[8] 0.9134615 0.8750000
+> i = which.max(ins)
+> ins[i]
+[1] 0.9134615
+> nn <- neuralnet(f,
++                 data = dadosNN,
++                 hidden = i,
++                 stepmax = 1e+10, threshold=0.05,
++                 act.fct = "logistic",
++                 linear.output = FALSE,
++                 lifesign = "minimal", rep = 10)
+hidden: 8    thresh: 0.05    rep:  1/10    steps:     151       error: 3.0431   time: 0.03 secs
+hidden: 8    thresh: 0.05    rep:  2/10    steps:    1210       error: 0.39578  time: 0.23 secs
+hidden: 8    thresh: 0.05    rep:  3/10    steps:     631       error: 1.08106  time: 0.12 secs
+hidden: 8    thresh: 0.05    rep:  4/10    steps:      72       error: 4.05236  time: 0.01 secs
+hidden: 8    thresh: 0.05    rep:  5/10    steps:      83       error: 4.25229  time: 0.01 secs
+hidden: 8    thresh: 0.05    rep:  6/10    steps:     786       error: 0.2784   time: 0.15 secs
+hidden: 8    thresh: 0.05    rep:  7/10    steps:     665       error: 0.5135   time: 0.12 secs
+hidden: 8    thresh: 0.05    rep:  8/10    steps:     216       error: 3.17776  time: 0.05 secs
+hidden: 8    thresh: 0.05    rep:  9/10    steps:     528       error: 1.03563  time: 0.1 secs
+hidden: 8    thresh: 0.05    rep: 10/10    steps:    1122       error: 0.27453  time: 0.21 secs
+> r = which.min(nn$result.matrix[1,])
+> plot(nn , rep = r,radius = 0.1, arrow.length = 0.2,
++ show.weights = TRUE, dimension = 6,  fontsize = 12)
+> 

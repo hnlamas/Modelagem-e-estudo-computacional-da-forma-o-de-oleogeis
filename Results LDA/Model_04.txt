@@ -1,0 +1,111 @@
+> # Discriminant analysis
+> require(MASS)
+> require(dplyr)
+> require(ggplot2)
+> # Data
+> dados<-read.csv("G:/Meu Drive/Projeto/Resultados/Model_4.csv",header=TRUE)
+> dados$Outcome<-as.factor(dados$Outcome)
+> #dados[,-c(ncol(dados))] <- scale(dados[,-c(ncol(dados))])
+> str(dados)
+'data.frame':   103 obs. of  23 variables:
+ $ dPs    : num  4.35 6.99 4.35 3.87 3.87 3.87 1.5 1.5 1.5 5.22 ...
+ $ dHs    : num  3.26 7.63 3.26 3.06 3.06 3.06 4.7 4.7 4.7 1.62 ...
+ $ dDs    : num  16 16.4 16 16.1 16.1 16.1 16 16 16 15.8 ...
+ $ MVs    : num  951 962 951 941 941 941 906 906 906 853 ...
+ $ dPg    : num  11.8 11.8 11.5 10.5 7.3 6.1 6.5 7.1 7.8 8.7 ...
+ $ dHg    : num  20.3 20.3 18.5 16.6 13.7 12.4 14.1 8.6 8.2 21.8 ...
+ $ dDg    : num  16.5 16.5 16.6 16.9 16.9 16.7 16 17.1 17.1 17.9 ...
+ $ MWg    : num  444 444 416 146 174 202 476 460 499 450 ...
+ $ MPg    : num  478 478 452 402 412 422 511 441 549 524 ...
+ $ BPG    : num  964 964 871 582 612 639 937 886 963 892 ...
+ $ FPg    : num  600 600 594 434 455 475 585 557 588 589 ...
+ $ STg    : num  29.3 29.3 60.3 56.4 52.8 50 25.3 23.9 24.6 54.2 ...
+ $ MVg    : num  227 227 211 122 155 188 239 238 248 205 ...
+ $ Afg    : num  0.699 0.699 1.4 0.964 1.03 1.1 0.514 0.498 0.48 1.18 ...
+ $ Dg     : num  0.976 0.976 0.987 1.18 1.11 1.07 0.995 0.966 1 1.1 ...
+ $ CTg    : num  1260 1260 1100 795 819 841 1180 1110 1220 1120 ...
+ $ CPg    : num  11.1 11.1 11.8 35.7 28.5 23.4 10.8 10.5 10.4 12.4 ...
+ $ CVg    : num  1600 1600 1500 407 520 633 1650 1640 1760 1490 ...
+ $ HFg    : num  74.1 74.1 72.3 25.7 31 36.3 84.3 76.6 82.5 64.7 ...
+ $ G0g    : num  -333 -333 -344 -680 -664 -648 -229 -70.1 120 -330 ...
+ $ Hfg    : num  -1110 -1110 -1060 -861 -903 -944 -933 -756 -609 -1110 ...
+ $ Hvg    : num  240 240 233 62.6 72.4 82.1 227 195 218 243 ...
+ $ Outcome: Factor w/ 3 levels "G","I","S": 1 3 2 1 1 1 1 1 1 1 ...
+> 
+> # Data partition
+> set.seed(555)
+> proportion <- 0.995
+> k <- nrow(dados)
+> outs <- NULL
+> 
+> for (j in 1:k)
++ {
++ index <- sample(1:nrow(dados), round(proportion*nrow(dados)))
++ train <- dados[index, ]
++ test <- dados[-index, ]
++ 
++ 
++ lda.train <- lda(formula=Outcome~.,data=train,na.action="na.omit")
++ lda.train.p <- predict(lda.train,train)
++ 
++ # Confusion matrix and accuracy - testing data
++ p2 <- predict(lda.train, test)$class
++ tab1 <- table(Predicted = p2, Actual = test$Outcome)
++ outs[j] <- sum(diag(tab1))/sum(tab1)
++ }
+> mean(outs)
+[1] 0.815534
+> lda.train <- lda(formula=Outcome~.,data=dados,na.action="na.omit")
+> lda.train
+Call:
+lda(Outcome ~ ., data = dados, na.action = "na.omit")
+
+Prior probabilities of groups:
+         G          I          S 
+0.89320388 0.02912621 0.07766990 
+
+Group means:
+      dPs      dHs      dDs      MVs       dPg       dHg      dDg      MWg
+G 4.17663 3.106196 16.06304 922.5870  5.953261  9.851087 16.58913 384.1087
+I 6.11000 6.173333 16.26667 958.3333 12.066667 18.833333 16.60000 453.6667
+S 4.43000 4.918750 16.23750 950.7500  7.300000 12.825000 16.68750 692.7500
+       MPg      BPG      FPg      STg      MVg      Afg        Dg      CTg
+G 419.0978  776.837 542.7935 33.82935 316.5652 1.010467 0.9337935 1013.402
+I 480.0000  934.000 605.6667 49.50000 231.6667 1.172000 0.9810000 1233.333
+S 514.7500 1027.000 714.0000 37.01250 618.5000 1.303500 0.9398750 1605.000
+       CPg      CVg       HFg       G0g        Hfg      Hvg
+G 12.01522 1402.739  66.31304 -201.9411  -860.2391 168.8489
+I 11.10333 1643.333  80.13333 -298.0000 -1093.3333 247.0000
+S  7.56000 2547.500 120.07500 -397.1250 -1667.2500 286.7500
+
+Coefficients of linear discriminants:
+             LD1           LD2
+dPs  0.063905605 -5.878218e-01
+dHs  0.242514942 -9.257577e-02
+dDs  2.063352969  2.821741e+00
+MVs -0.007595842 -1.033466e-02
+dPg -0.086212209  2.683194e-01
+dHg  0.129335433  1.098007e-01
+dDg  1.389892050  6.720159e-01
+MWg -0.067272960 -1.168432e-03
+MPg -0.001231816  3.566422e-02
+BPG  0.009483027 -2.303813e-02
+FPg -0.019760427 -1.584398e-02
+STg  0.166598695 -2.776965e-01
+MVg  0.009628870  3.402336e-03
+Afg -4.113252478  5.006621e+00
+Dg  -8.541683267 -9.892427e+00
+CTg  0.001068241 -1.359966e-05
+CPg -0.090817385  3.134785e-01
+CVg  0.020357629  3.032627e-03
+HFg  0.019779540 -1.074753e-01
+G0g -0.016208002  5.993706e-03
+Hfg  0.010458257 -6.886545e-03
+Hvg  0.017041753  3.215087e-02
+
+Proportion of trace:
+   LD1    LD2 
+0.7671 0.2329 
+> lda.data <- cbind(dados, predict(lda.train)$x)
+> ggplot(lda.data, aes(LD1, LD2)) +
++   geom_point(aes(color = Outcome))

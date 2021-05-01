@@ -1,0 +1,86 @@
+> # Discriminant analysis
+> require(MASS)
+> require(dplyr)
+> require(ggplot2)
+> # Data
+> dados<-read.csv("G:/Meu Drive/Projeto/Resultados/Model_12.csv",header=TRUE)
+> dados$Outcome<-as.factor(dados$Outcome)
+> #dados[,-c(ncol(dados))] <- scale(dados[,-c(ncol(dados))])
+> str(dados)
+'data.frame':   268 obs. of  12 variables:
+ $ dPg    : num  12.8 12.4 7.9 13.3 13.9 14.9 13.2 12.4 13.3 13.9 ...
+ $ dHg    : num  18.7 12.9 12.4 11.9 13.5 14.1 13.4 12.9 11.9 13.5 ...
+ $ dDg    : num  16.6 17.7 16.5 17.2 17.2 17.1 18.9 17.7 17.2 17.2 ...
+ $ dTg    : num  28.1 25.2 22.1 24.8 25.9 26.7 26.7 25.2 24.8 25.9 ...
+ $ dPs    : num  3.44 1.5 3.45 1.5 1.5 1.5 1.5 4.1 4.1 4.1 ...
+ $ dHs    : num  4.11 4.7 3.69 4.7 4.7 4.7 4.7 2.5 2.5 2.5 ...
+ $ dDs    : num  16.2 16 16.2 16 16 16 16 16 16 16 ...
+ $ dTs    : num  17.1 16.7 17 16.7 16.7 16.7 16.7 16.7 16.7 16.7 ...
+ $ MVs    : num  952 906 931 906 906 906 906 947 947 947 ...
+ $ Dist   : num  17.3 13.7 9.79 13.9 15.3 16.4 14.9 13.4 13.2 14.8 ...
+ $ FH1    : num  46.4 25.9 9.75 23.6 30.7 36.3 36 27.4 24.9 32.4 ...
+ $ Outcome: Factor w/ 3 levels "G","I","S": 3 1 2 1 1 1 1 1 1 1 ...
+> 
+> # Data partition
+> set.seed(555)
+> proportion <- 0.995
+> k <- nrow(dados)
+> outs <- NULL
+> 
+> for (j in 1:k)
++ {
++ index <- sample(1:nrow(dados), round(proportion*nrow(dados)))
++ train <- dados[index, ]
++ test <- dados[-index, ]
++ 
++ 
++ lda.train <- lda(formula=Outcome~.,data=train,na.action="na.omit")
++ lda.train.p <- predict(lda.train,train)
++ 
++ # Confusion matrix and accuracy - testing data
++ p2 <- predict(lda.train, test)$class
++ tab1 <- table(Predicted = p2, Actual = test$Outcome)
++ outs[j] <- sum(diag(tab1))/sum(tab1)
++ }
+> mean(outs)
+[1] 0.8320896
+> lda.train <- lda(formula=Outcome~.,data=dados,na.action="na.omit")
+> lda.train
+Call:
+lda(Outcome ~ ., data = dados, na.action = "na.omit")
+
+Prior probabilities of groups:
+         G          I          S 
+0.86194030 0.03731343 0.10074627 
+
+Group means:
+       dPg       dHg      dDg      dTg      dPs      dHs      dDs      dTs
+G 6.438797  9.310866 16.86450 20.84805 3.883939 3.395628 16.08658 16.95671
+I 8.725000 12.291000 17.21000 23.71000 4.338000 4.842000 16.17000 17.59000
+S 5.501481  9.639259 16.74074 20.77037 3.840000 4.115556 16.19259 17.22222
+       MVs     Dist       FH1
+G 925.1385 7.741039  9.533136
+I 940.3000 9.648000 18.532200
+S 939.2963 6.548519  9.412741
+
+Coefficients of linear discriminants:
+              LD1           LD2
+dPg  -0.150298680  0.2743610025
+dHg   0.300460978  0.3546153277
+dDg  -0.176158577 -0.3194135568
+dTg   0.523808781 -0.7236627511
+dPs  -1.288383410 -0.8939697711
+dHs  -1.059579772 -1.4902019017
+dDs  -1.299392781  4.2929020594
+dTs   3.246033938  2.0449952367
+MVs   0.005764894  0.0005730007
+Dist -0.663297197 -0.4056410551
+FH1   0.043311392  0.1117814521
+
+Proportion of trace:
+   LD1    LD2 
+0.6786 0.3214 
+> lda.data <- cbind(dados, predict(lda.train)$x)
+> ggplot(lda.data, aes(LD1, LD2)) +
++   geom_point(aes(color = Outcome), size=3)
+> 
