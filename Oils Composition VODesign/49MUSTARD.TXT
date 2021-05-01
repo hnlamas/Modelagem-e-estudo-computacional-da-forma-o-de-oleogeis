@@ -1,0 +1,75 @@
+ *******************************************************************************
+                        PROGRAM VOSTAT v.03
+ AUTHOR:MOISES TELES - LABORATOIRE DE GENIE CHIMIQUE DE TOULOUSE - UNIVERSIDADE 
+ DE SAO PAULO
+ *******************************************************************************
+ VEGETABLE OILS
+ FILE NAME:49MUSTARD      
+ 20200829       103241.548     
+ ===============================================================================
+                  TRIACYLGLYCEROLS
+ ===============================================================================
+ TAG number      TAG code      Molar Fraction      Mass Fraction    MW(i)       
+    
+ -----------------------------------------------------------------------------
+1540      aLnn  aLnn  aLnn       0.2704                  0.2704     38.05
+1445      eSte  aLnn  aLnn       0.1358                  0.1358     38.05
+1335      gLnn  aLnn  aLnn       0.1358                  0.1358     38.05
+1534      aLnn  eSte  aLnn       0.0679                  0.0679     38.05
+1528      aLnn  gLnn  aLnn       0.0679                  0.0679     38.05
+1438      eSte  eSte  aLnn       0.0341                  0.0341     38.05
+1327      gLnn  eSte  aLnn       0.0341                  0.0341     38.05
+1334      gLnn  aLnn  eSte       0.0341                  0.0341     38.05
+1319      gLnn  gLnn  aLnn       0.0341                  0.0341     38.05
+1431      eSte  gLnn  aLnn       0.0341                  0.0341     38.05
+1542      aLnn  aLnn  D2Ach      0.0178                  0.0178     38.05
+1444      eSte  aLnn  eSte       0.0170                  0.0170     38.05
+1333      gLnn  aLnn  gLnn       0.0170                  0.0170     38.05
+ 560      DPam  aLnn  aLnn       0.0089                  0.0089     38.05
+1552      aLnn  D2Ach aLnn       0.0089                  0.0089     38.05
+1326      gLnn  eSte  eSte       0.0086                  0.0086     38.05
+1318      gLnn  gLnn  eSte       0.0086                  0.0086     38.05
+1459      eSte  D2Ach aLnn       0.0045                  0.0045     38.05
+1351      gLnn  D2Ach aLnn       0.0045                  0.0045     38.05
+1536      aLnn  eSte  D2Ach      0.0045                  0.0045     38.05
+1447      eSte  aLnn  D2Ach      0.0045                  0.0045     38.05
+1530      aLnn  gLnn  D2Ach      0.0045                  0.0045     38.05
+1337      gLnn  aLnn  D2Ach      0.0045                  0.0045     38.05
+1498      aLnn  DPam  aLnn       0.0045                  0.0045     38.05
+1430      eSte  gLnn  eSte       0.0043                  0.0043     38.05
+1325      gLnn  eSte  gLnn       0.0043                  0.0043     38.05
+1437      eSte  eSte  eSte       0.0043                  0.0043     38.05
+1317      gLnn  gLnn  gLnn       0.0043                  0.0043     38.05
+ 547      DPam  eSte  aLnn       0.0022                  0.0022     38.05
+1396      eSte  DPam  aLnn       0.0022                  0.0022     38.05
+ 558      DPam  aLnn  gLnn       0.0022                  0.0022     38.05
+ 559      DPam  aLnn  eSte       0.0022                  0.0022     38.05
+ 534      DPam  gLnn  aLnn       0.0022                  0.0022     38.05
+1279      gLnn  DPam  aLnn       0.0022                  0.0022     38.05
+1329      gLnn  eSte  D2Ach      0.0011                  0.0011     38.05
+1350      gLnn  D2Ach eSte       0.0011                  0.0011     38.05
+1440      eSte  eSte  D2Ach      0.0011                  0.0011     38.05
+ -----------------------------------------------------------------------------
+ Number of Molecules:
+ 37
+ Molar and Mass Balance
+    1.0000
+    1.0000
+ ===============================================================================
+                  FATTY ACIDS: from databank
+ ===============================================================================
+Myr  0.01
+Pam  0.04
+DPa  0.00
+Ste  0.02
+Ole  0.12
+Vac  0.12
+Lin  0.26
+gLn  0.06
+eSt  0.06
+aLn  0.24
+Ach  0.01
+D2A  0.01
+Beh  0.02
+Lig  0.01
+Ner  0.02
